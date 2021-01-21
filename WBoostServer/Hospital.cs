@@ -12,7 +12,9 @@ namespace WBoostServer
         public string Title { get; set; }
         public string Address { get; set; }
         public string Number { get; set; }
+        [JsonProperty("donor")]
         public string Donar { get; set; }
+        [JsonProperty("date")]
         public string Date { get; set; }
         [JsonProperty("bg")]
         public string BloodGroup { get; set; }

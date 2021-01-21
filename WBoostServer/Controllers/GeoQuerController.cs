@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.Documents.Spatial;
 
 namespace WBoostServer.Controllers
@@ -21,6 +22,7 @@ namespace WBoostServer.Controllers
         private const string CollectionName= "Hospitals";
 
         private Database DB;
+        private Uri documentCollectionUri;
 
         private static readonly IndexingPolicy IndexingPolicyWithSpatialEnabledOnPoints = new IndexingPolicy(new SpatialIndex(DataType.Point), new RangeIndex(DataType.String) { Precision = -1 });
 
@@ -30,15 +32,32 @@ namespace WBoostServer.Controllers
             this.Cosmos = Cosmos;
             DB = GetDatabase();
             Collection = GetCollection();
+            documentCollectionUri = UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName);
 
         }
         [HttpGet("Add")]
         public IActionResult Add()
         {
             Cosmos.CreateDocumentAsync(
-                UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName), new Hospital()
-                { LatLong = new Point(12, 22), Address = "Barbodas" }
-                ); ;
+                documentCollectionUri
+                ,new Hospital() { LatLong = new Point(13, 35), Address = "Barbodas" }
+                ); 
+
+            return Ok("query result");
+        }
+        [HttpGet("Locate")]
+        public IActionResult Locate()
+        {
+            Point currentPt = new Point(12, 22);
+            int maximumDistance = 120000;
+
+            var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri
+                ,new FeedOptions { EnableCrossPartitionQuery = true })
+            .Where(cda => currentPt.Distance(cda.LatLong) < maximumDistance)
+            .AsDocumentQuery();
+
+            var res = nearQuery.ExecuteNextAsync().GetAwaiter().GetResult();
+            var nb=res.ToList().First();
 
             return Ok("query result");
         }
