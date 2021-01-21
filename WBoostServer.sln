@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30803.129
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WBoostServer", "WBoostServer\WBoostServer.csproj", "{DB473000-4B80-4FD8-85B3-EC57EF31AF05}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DB473000-4B80-4FD8-85B3-EC57EF31AF05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB473000-4B80-4FD8-85B3-EC57EF31AF05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB473000-4B80-4FD8-85B3-EC57EF31AF05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB473000-4B80-4FD8-85B3-EC57EF31AF05}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {01508318-FF9D-4948-99EC-90A1E92D2F4B}
+	EndGlobalSection
+EndGlobal
