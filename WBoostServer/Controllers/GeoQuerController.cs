@@ -131,7 +131,7 @@ namespace WBoostServer.Controllers
             var maximumDistance = 150_000;//150km
 
             var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.LatLong, {'type': 'Point', 'coordinates':[" + cpt.Position.Latitude + "," + cpt.Position.Longitude +"]}) < "+$"{maximumDistance}";
-                 if(bg!=null)     qry+="  and e.bg="+'"'+newHospital.BloodGroup+'"';
+                 if(bg!=null)     qry+= "  and e.BloodGroup=" + '"'+newHospital.BloodGroup.ToUpper()+'"';
             
             var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri,
                 qry, new FeedOptions { EnableCrossPartitionQuery = true });
