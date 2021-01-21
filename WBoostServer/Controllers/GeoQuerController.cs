@@ -67,14 +67,12 @@ namespace WBoostServer.Controllers
             int maximumDistance = 120000;
 
             var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri
-                ,new FeedOptions { EnableCrossPartitionQuery = true })
-            .Where(cda => currentPt.Distance(cda.LatLong) < maximumDistance)
-            .AsDocumentQuery();
+                , new FeedOptions { EnableCrossPartitionQuery = true })
+            .Where(cda => currentPt.Distance(cda.LatLong) < maximumDistance);
 
-            var res = nearQuery.ExecuteNextAsync().GetAwaiter().GetResult();
-            var nb=res.ToList().First();
+            var nb=nearQuery.ToList().First();
 
-            return Ok("query result");
+            return Ok(nb);
         }
 
         Database GetDatabase()
