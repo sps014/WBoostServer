@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
@@ -30,26 +32,45 @@ namespace WBoostServer.Controllers
         public GeoQuery(DocumentClient Cosmos)
         {
             this.Cosmos = Cosmos;
-            DB = GetDatabase();
-            Collection = GetCollection();
+            DB = GetDatabase().GetAwaiter().GetResult();
+            Collection = GetCollection().GetAwaiter().GetResult(); ;
             documentCollectionUri = UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName);
 
         }
-        [HttpGet("Add")]
+        [HttpPost("Add")]
         public async Task<IActionResult> Add()
         {
-            var newLatLong = new Point(12,22);
+            var json = await new StreamReader(Request.Body).ReadToEndAsync();
+            Hospital newHospital;
+            try
+            {
+                var shadow = JsonSerializer.Deserialize<HospitalShadow>(json);
+                newHospital=new Hospital() 
+                { 
+                    Address = shadow.Address,
+                    BloodGroup=shadow.BloodGroup,
+                    Date=shadow.Date,
+                    Donar=shadow.Donar,
+                    LatLong=new Point(shadow.Long,shadow.Lat),
+                    PhoneNumber=shadow.PhoneNumber,
+                    Title=shadow.Title,
+                    URL=shadow.URL
+                };
+            }
+            catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+            var newLatLong = newHospital.LatLong;
             
             //query if another hospital present at same location
             var queryLatLong = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri)
-                .Where(h => newLatLong==h.LatLong).AsDocumentQuery();
+                .Where(h => newLatLong==h.LatLong).ToList();
 
-            var qres = await queryLatLong.ExecuteNextAsync();
-            if (qres.Count==0)
+            if (queryLatLong.Count==0)
             {
                 await Cosmos.CreateDocumentAsync(
-                    documentCollectionUri
-                    ,new Hospital() { LatLong = newLatLong, Address = "Barbodas" }
+                    documentCollectionUri,newHospital
                     );
 
                 return Ok("success");
@@ -57,39 +78,62 @@ namespace WBoostServer.Controllers
             }
             else
             {
-                return BadRequest($"Hospital name {qres.First().Address} is already present at given lat long.");
+                return BadRequest($"Hospital named {queryLatLong.First().Address} is already present at given lat long.");
             }
         }
-        [HttpGet("Locate")]
-        public IActionResult Locate()
+        [HttpPost("Locate")]
+        public async Task<IActionResult> Locate()
         {
-            Point currentPt = new Point(12, 22);
-            int maximumDistance = 120000;
+            var json = await new StreamReader(Request.Body).ReadToEndAsync();
+            Hospital newHospital;
+            try
+            {
+                var shadow = JsonSerializer.Deserialize<HospitalShadow>(json);
+                newHospital = new Hospital()
+                {
+                    BloodGroup = shadow.BloodGroup,
+                    LatLong = new Point(shadow.Long, shadow.Lat)                
+                };
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
 
-            var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri
-                , new FeedOptions { EnableCrossPartitionQuery = true })
-            .Where(cda => currentPt.Distance(cda.LatLong) < maximumDistance);
+            Point currentPt =newHospital.LatLong;
+            string bg = newHospital.BloodGroup;
 
-            var nb=nearQuery.ToList().First();
+
+            var maximumDistance = 150_000000000000;//150km
+
+            var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.latlong, {'type': 'Point', 'coordinates':[" + newHospital.LatLong.Position.Longitude + "," + newHospital.LatLong.Position.Latitude +"]}) < "+$"{maximumDistance}";
+                      //qry+="  and e.bg="+@"""+newHospital.BloodGroup+""";
+            
+            var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri,
+                qry, new FeedOptions { EnableCrossPartitionQuery = true });
+
+            //var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri
+            //    , new FeedOptions { EnableCrossPartitionQuery = true })
+            //.Where(c => currentPt.Distance(c.LatLong) < maximumDistance);
+
+            var nb=nearQuery.ToList();
 
             return Ok(nb);
         }
 
-        Database GetDatabase()
+        async Task<Database> GetDatabase()
         {
             var dbs = from db in Cosmos.CreateDatabaseQuery()
                       where db.Id == DatabaseName
                       select db;
 
             var dbr= dbs.ToList().First();
-            if(dbr==null)
-                dbr = Cosmos.CreateDatabaseAsync(new Database() { Id = DatabaseName })
-                    .GetAwaiter()
-                    .GetResult();
+            if (dbr == null)
+                dbr = await Cosmos.CreateDatabaseAsync(new Database() { Id = DatabaseName });
 
             return dbr;
         }
-        DocumentCollection GetCollection()
+        async Task<DocumentCollection> GetCollection()
         {
             var dbs = from col in Cosmos.CreateDocumentCollectionQuery(DB.SelfLink)
                       where col.Id==CollectionName
@@ -97,10 +141,8 @@ namespace WBoostServer.Controllers
 
             var col1st = dbs.ToList().First();
             if (col1st == null)
-                col1st = Cosmos.CreateDocumentCollectionAsync(DB.SelfLink,
-                    new DocumentCollection() { IndexingPolicy = IndexingPolicyWithSpatialEnabledOnPoints })
-                    .GetAwaiter()
-                    .GetResult();
+                col1st = await Cosmos.CreateDocumentCollectionAsync(DB.SelfLink,
+                    new DocumentCollection() { IndexingPolicy = IndexingPolicyWithSpatialEnabledOnPoints });
 
             return dbs.ToList().First();
         }

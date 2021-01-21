@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.Spatial;
 using Newtonsoft.Json;
@@ -9,19 +10,21 @@ namespace WBoostServer
 {
     public record Hospital
     {
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
-        [JsonProperty("address")]
+        [JsonPropertyName("address")]
         public string Address { get; set; }
-        [JsonProperty("number")]
+        [JsonPropertyName("number")]
         public string PhoneNumber { get; set; }
-        [JsonProperty("donor")]
+        [JsonPropertyName("donor")]
         public string Donar { get; set; }
-        [JsonProperty("date")]
+        [JsonPropertyName("date")]
         public string Date { get; set; }
-        [JsonProperty("bg")]
+        [JsonPropertyName("bg")]
         public string BloodGroup { get; set; }
-        [JsonProperty("latlong")]
+        [JsonPropertyName("latlong")]
         public Point LatLong { get; set; }
+        [JsonPropertyName("url")]
+        public string URL { get; set; }
     }
 }
