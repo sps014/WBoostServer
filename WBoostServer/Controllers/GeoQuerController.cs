@@ -41,6 +41,9 @@ namespace WBoostServer.Controllers
         [HttpPost("Add")]
         public async Task<IActionResult> Add()
         {
+            //ReadJson();
+            //return Ok("Written Json to azure");
+
             var json = await new StreamReader(Request.Body).ReadToEndAsync();
             Hospital newHospital;
             try
@@ -55,7 +58,8 @@ namespace WBoostServer.Controllers
                     LatLong=new Point(shadow.Long,shadow.Lat),
                     PhoneNumber=shadow.PhoneNumber,
                     Title=shadow.Title,
-                    URL=shadow.URL
+                    URL=shadow.URL,
+                    Ventilators=shadow.Ventilators
                 };
             }
             catch(Exception e)
@@ -66,6 +70,40 @@ namespace WBoostServer.Controllers
             await Cosmos.CreateDocumentAsync(documentCollectionUri, newHospital);
 
             return Ok("success");
+        }
+
+        private async void ReadJson()
+        {
+            var json = await new StreamReader(@"C:\Users\shive\Downloads\data.json").ReadToEndAsync();
+            Hospital newHospital;
+            try
+            {
+                var shadow = JsonSerializer.Deserialize<HospitalShadow[]>(json);
+                foreach(var s in shadow)
+                {
+                    newHospital = new Hospital()
+                    {
+                        Address = s.Address,
+                        BloodGroup = s.BloodGroup,
+                        Date = s.Date,
+                        Donar = s.Donor,
+                        LatLong = new Point(s.Long, s.Lat),
+                        PhoneNumber = s.PhoneNumber,
+                        Title = s.Title,
+                        URL = s.URL,
+                        Ventilators=s.Ventilators
+                    };
+
+                    await Cosmos.CreateDocumentAsync(documentCollectionUri, newHospital);
+
+                }
+            }
+            catch (Exception e)
+            {
+            }
+
+
+           // return Ok("success");
         }
         [HttpPost("Locate")]
         public async Task<IActionResult> Locate()
@@ -92,7 +130,7 @@ namespace WBoostServer.Controllers
 
             var maximumDistance = 150_000;//150km
 
-            var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.latlong, {'type': 'Point', 'coordinates':[" + newHospital.LatLong.Position.Longitude + "," + newHospital.LatLong.Position.Latitude +"]}) < "+$"{maximumDistance}";
+            var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.LatLong, {'type': 'Point', 'coordinates':[" + cpt.Position.Latitude + "," + cpt.Position.Longitude +"]}) < "+$"{maximumDistance}";
                  if(bg!=null)     qry+="  and e.bg="+'"'+newHospital.BloodGroup+'"';
             
             var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri,

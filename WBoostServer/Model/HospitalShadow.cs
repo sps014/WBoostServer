@@ -27,5 +27,7 @@ namespace WBoostServer
         public double Long { get; set; }
         [JsonPropertyName("url")]
         public string URL { get; set; }
+        [JsonPropertyName("ventilators")]
+        public int Ventilators { get; set; }
     }
 }

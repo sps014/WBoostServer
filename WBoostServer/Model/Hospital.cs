@@ -26,5 +26,7 @@ namespace WBoostServer
         public Point LatLong { get; set; }
         [JsonPropertyName("url")]
         public string URL { get; set; }
+        [JsonPropertyName("ventilators")]
+        public int Ventilators { get; set; }
     }
 }
