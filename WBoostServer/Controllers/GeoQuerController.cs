@@ -36,14 +36,29 @@ namespace WBoostServer.Controllers
 
         }
         [HttpGet("Add")]
-        public IActionResult Add()
+        public async Task<IActionResult> Add()
         {
-            Cosmos.CreateDocumentAsync(
-                documentCollectionUri
-                ,new Hospital() { LatLong = new Point(13, 35), Address = "Barbodas" }
-                ); 
+            var newLatLong = new Point(12,22);
+            
+            //query if another hospital present at same location
+            var queryLatLong = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri)
+                .Where(h => newLatLong==h.LatLong).AsDocumentQuery();
 
-            return Ok("query result");
+            var qres = await queryLatLong.ExecuteNextAsync();
+            if (qres.Count==0)
+            {
+                await Cosmos.CreateDocumentAsync(
+                    documentCollectionUri
+                    ,new Hospital() { LatLong = newLatLong, Address = "Barbodas" }
+                    );
+
+                return Ok("success");
+
+            }
+            else
+            {
+                return BadRequest($"Hospital name {qres.First().Address} is already present at given lat long.");
+            }
         }
         [HttpGet("Locate")]
         public IActionResult Locate()

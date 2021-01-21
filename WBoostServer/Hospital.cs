@@ -9,9 +9,12 @@ namespace WBoostServer
 {
     public record Hospital
     {
+        [JsonProperty("title")]
         public string Title { get; set; }
+        [JsonProperty("address")]
         public string Address { get; set; }
-        public string Number { get; set; }
+        [JsonProperty("number")]
+        public string PhoneNumber { get; set; }
         [JsonProperty("donor")]
         public string Donar { get; set; }
         [JsonProperty("date")]
