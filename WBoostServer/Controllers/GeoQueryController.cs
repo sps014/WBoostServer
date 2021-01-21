@@ -130,7 +130,7 @@ namespace WBoostServer.Controllers
 
             var maximumDistance = 150_000;//150km
 
-            var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.LatLong, {'type': 'Point', 'coordinates':[" + cpt.Position.Latitude + "," + cpt.Position.Longitude +"]}) < "+$"{maximumDistance}";
+            var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.LatLong, {'type': 'Point', 'coordinates':[" + cpt.Position.Longitude + "," + cpt.Position.Latitude +"]}) < "+$"{maximumDistance}";
                  if(bg!=null)     qry+= "  and e.BloodGroup=" + '"'+newHospital.BloodGroup.ToUpper()+'"';
             
             var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri,
@@ -141,9 +141,11 @@ namespace WBoostServer.Controllers
             //.Where(c => currentPt.Distance(c.LatLong) < maximumDistance);
 
             var nb = nearQuery.ToList();
-                nb.OrderBy((x)=>x.LatLong.Distance(cpt));
+            
+            var b=nb.OrderBy((x)=>Distance(cpt.Position.Latitude,cpt.Position.Longitude,
+                x.LatLong.Position.Latitude,x.LatLong.Position.Longitude,'K')).ToList();
 
-            return Ok(nb);
+            return Ok(b);
         }
 
         async Task<Database> GetDatabase()
@@ -171,6 +173,45 @@ namespace WBoostServer.Controllers
 
             return dbs.ToList().First();
         }
+        private double Distance(double lat1, double lon1, double lat2, double lon2, char unit)
+        {
+            if ((lat1 == lat2) && (lon1 == lon2))
+            {
+                return 0;
+            }
+            else
+            {
+                double theta = lon1 - lon2;
+                double dist = Math.Sin(deg2rad(lat1)) * Math.Sin(deg2rad(lat2)) + Math.Cos(deg2rad(lat1)) * Math.Cos(deg2rad(lat2)) * Math.Cos(deg2rad(theta));
+                dist = Math.Acos(dist);
+                dist = rad2deg(dist);
+                dist = dist * 60 * 1.1515;
+                if (unit == 'K')
+                {
+                    dist = dist * 1.609344;
+                }
+                else if (unit == 'N')
+                {
+                    dist = dist * 0.8684;
+                }
+                return (dist);
+            }
+        }
 
+        //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        //::  This function converts decimal degrees to radians             :::
+        //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        private double deg2rad(double deg)
+        {
+            return (deg * Math.PI / 180.0);
+        }
+
+        //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        //::  This function converts radians to decimal degrees             :::
+        //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        private double rad2deg(double rad)
+        {
+            return (rad / Math.PI * 180.0);
+        }
     }
 }
