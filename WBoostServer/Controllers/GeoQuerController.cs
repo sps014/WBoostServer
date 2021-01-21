@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -50,7 +51,7 @@ namespace WBoostServer.Controllers
                     Address = shadow.Address,
                     BloodGroup=shadow.BloodGroup,
                     Date=shadow.Date,
-                    Donar=shadow.Donar,
+                    Donar=shadow.Donor,
                     LatLong=new Point(shadow.Long,shadow.Lat),
                     PhoneNumber=shadow.PhoneNumber,
                     Title=shadow.Title,
@@ -61,25 +62,10 @@ namespace WBoostServer.Controllers
             {
                 return BadRequest(e.Message);
             }
-            var newLatLong = newHospital.LatLong;
-            
-            //query if another hospital present at same location
-            var queryLatLong = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri)
-                .Where(h => newLatLong==h.LatLong).ToList();
 
-            if (queryLatLong.Count==0)
-            {
-                await Cosmos.CreateDocumentAsync(
-                    documentCollectionUri,newHospital
-                    );
+            await Cosmos.CreateDocumentAsync(documentCollectionUri, newHospital);
 
-                return Ok("success");
-
-            }
-            else
-            {
-                return BadRequest($"Hospital named {queryLatLong.First().Address} is already present at given lat long.");
-            }
+            return Ok("success");
         }
         [HttpPost("Locate")]
         public async Task<IActionResult> Locate()
@@ -100,14 +86,14 @@ namespace WBoostServer.Controllers
                 return BadRequest(e.Message);
             }
 
-            Point currentPt =newHospital.LatLong;
+            Point cpt =newHospital.LatLong;
             string bg = newHospital.BloodGroup;
 
 
-            var maximumDistance = 150_000000000000;//150km
+            var maximumDistance = 150_000;//150km
 
             var qry = "SELECT * FROM loc e WHERE  ST_DISTANCE(e.latlong, {'type': 'Point', 'coordinates':[" + newHospital.LatLong.Position.Longitude + "," + newHospital.LatLong.Position.Latitude +"]}) < "+$"{maximumDistance}";
-                      //qry+="  and e.bg="+@"""+newHospital.BloodGroup+""";
+                 if(bg!=null)     qry+="  and e.bg="+'"'+newHospital.BloodGroup+'"';
             
             var nearQuery = Cosmos.CreateDocumentQuery<Hospital>(documentCollectionUri,
                 qry, new FeedOptions { EnableCrossPartitionQuery = true });
@@ -116,7 +102,8 @@ namespace WBoostServer.Controllers
             //    , new FeedOptions { EnableCrossPartitionQuery = true })
             //.Where(c => currentPt.Distance(c.LatLong) < maximumDistance);
 
-            var nb=nearQuery.ToList();
+            var nb = nearQuery.ToList();
+                nb.OrderBy((x)=>x.LatLong.Distance(cpt));
 
             return Ok(nb);
         }

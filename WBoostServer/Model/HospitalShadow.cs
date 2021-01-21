@@ -16,7 +16,7 @@ namespace WBoostServer
         [JsonPropertyName("number")]
         public string PhoneNumber { get; set; }
         [JsonPropertyName("donor")]
-        public string Donar { get; set; }
+        public string Donor { get; set; }
         [JsonPropertyName("date")]
         public string Date { get; set; }
         [JsonPropertyName("bg")]
