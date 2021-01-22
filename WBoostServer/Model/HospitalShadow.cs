@@ -30,4 +30,13 @@ namespace WBoostServer
         [JsonPropertyName("ventilators")]
         public int Ventilators { get; set; }
     }
+    public record LocateParam
+    {
+        [JsonPropertyName("lat")]
+        public string Lat { get; set; }
+        [JsonPropertyName("long")]
+        public string Long { get; set; }
+        [JsonPropertyName("bg")]
+        public string BloodGroup { get; set; }
+    }
 }

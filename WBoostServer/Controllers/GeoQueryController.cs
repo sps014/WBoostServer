@@ -112,11 +112,11 @@ namespace WBoostServer.Controllers
             Hospital newHospital;
             try
             {
-                var shadow = JsonSerializer.Deserialize<HospitalShadow>(json);
+                var shadow = JsonSerializer.Deserialize<LocateParam>(json);
                 newHospital = new Hospital()
                 {
                     BloodGroup = shadow.BloodGroup,
-                    LatLong = new Point(shadow.Long, shadow.Lat)                
+                    LatLong = new Point(double.Parse(shadow.Long),double.Parse(shadow.Lat))                
                 };
             }
             catch (Exception e)
