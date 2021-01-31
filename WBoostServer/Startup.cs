@@ -20,14 +20,17 @@ namespace WBoostServer
 {
     public class Startup
     {
-        private static readonly string EndpointUri = "https://wboost.documents.azure.com:443/";
-        private static readonly string PrimaryKey = "DPc6DlSJOJemJGEJocG03m6g6kVmdaLh31u1VrWTOxXaurNDrAwur4CWYe7fgx5B5FJucHH5ifzVRl0g9aKZCg==";
+        private static  string EndpointUri = "";
+        private static  string PrimaryKey = "";
         private DocumentClient Cosmos;
 
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            EndpointUri = Environment.GetEnvironmentVariable("CosmoEndPoint");
+            PrimaryKey = Environment.GetEnvironmentVariable("CosmoPrimaryKey");
             Cosmos = new DocumentClient(new Uri(EndpointUri),new NetworkCredential("",PrimaryKey).Password);
+
         }
 
         public IConfiguration Configuration { get; }
